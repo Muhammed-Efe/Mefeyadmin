@@ -1,51 +1,296 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>MEFEY</title>
+<meta charset="UTF-8">
+<title>MEFEY - AI • Games • Tech</title>
 
-<meta name="description" content="Mefey AI, oyun ve teknoloji sitesi">
+<meta name="description" content="MEFEY AI games technology hacker style website">
+<meta name="keywords" content="AI, games, hacker, technology, mefey">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 
 body{
+margin:0;
+font-family:monospace;
 background:black;
-color:white;
-font-family:sans-serif;
+color:#00ff9f;
 text-align:center;
+overflow-x:hidden;
+}
+
+canvas.matrix{
+position:fixed;
+top:0;
+left:0;
+z-index:-1;
 }
 
 h1{
-font-size:60px;
-animation: glow 2s infinite alternate;
+font-size:70px;
+margin-top:80px;
+text-shadow:0 0 20px #00ff9f;
 }
 
-@keyframes glow{
-from{color:#00ffff}
-to{color:#ff00ff}
+.menu{
+margin-top:40px;
 }
 
 button{
-padding:15px;
-font-size:20px;
-background:#00ffff;
+padding:15px 25px;
+margin:10px;
+font-size:18px;
 border:none;
 border-radius:10px;
 cursor:pointer;
+background:#00ff9f;
+color:black;
+}
+
+.section{
+display:none;
+padding:40px;
+}
+
+canvas.game{
+background:white;
+margin-top:20px;
+}
+
+#chatbox{
+width:300px;
+position:fixed;
+bottom:20px;
+right:20px;
+background:#111;
+padding:15px;
+border-radius:10px;
+}
+
+#messages{
+height:150px;
+overflow:auto;
+text-align:left;
+font-size:14px;
+}
+
+input{
+width:70%;
 }
 
 </style>
-
 </head>
 
 <body>
 
-<h1>🚀 MEFEY</h1>
+<canvas id="matrix" class="matrix"></canvas>
 
+<h1>⚡ MEFEY</h1>
 <p>AI • Games • Technology</p>
 
-<button onclick="window.location.href='game.html'">
-🎮 Play Game
-</button>
+<div class="menu">
+<button onclick="show('home')">Home</button>
+<button onclick="show('games')">Games</button>
+<button onclick="show('about')">About</button>
+</div>
+
+<div id="home" class="section" style="display:block">
+<h2>Welcome</h2>
+<p>Welcome to MEFEY hacker style website.</p>
+</div>
+
+<div id="about" class="section">
+<h2>About</h2>
+<p>Created by Mefey. AI • Games • Tech.</p>
+</div>
+
+<div id="games" class="section">
+
+<h2>🎮 Games</h2>
+
+<button onclick="startGame(1)">Catch Square</button>
+<button onclick="startGame(2)">Number Guess</button>
+<button onclick="startGame(3)">Click Speed</button>
+<button onclick="startGame(4)">Dice Roll</button>
+<button onclick="startGame(5)">Coin Flip</button>
+
+<div id="gameArea"></div>
+
+</div>
+
+<div id="chatbox">
+<div id="messages"></div>
+<input id="userInput">
+<button onclick="chat()">Send</button>
+</div>
+
+<script>
+
+/* SECTION SWITCH */
+
+function show(id){
+document.querySelectorAll(".section").forEach(s=>s.style.display="none");
+document.getElementById(id).style.display="block";
+}
+
+/* MATRIX BACKGROUND */
+
+let c=document.getElementById("matrix");
+let ctx=c.getContext("2d");
+
+c.height=window.innerHeight;
+c.width=window.innerWidth;
+
+let letters="01";
+letters=letters.split("");
+
+let fontSize=14;
+let columns=c.width/fontSize;
+
+let drops=[];
+for(let x=0;x<columns;x++)
+drops[x]=1;
+
+function drawMatrix(){
+
+ctx.fillStyle="rgba(0,0,0,0.05)";
+ctx.fillRect(0,0,c.width,c.height);
+
+ctx.fillStyle="#0F0";
+ctx.font=fontSize+"px monospace";
+
+for(let i=0;i<drops.length;i++){
+
+let text=letters[Math.floor(Math.random()*letters.length)];
+
+ctx.fillText(text,i*fontSize,drops[i]*fontSize);
+
+if(drops[i]*fontSize>c.height && Math.random()>0.975)
+drops[i]=0;
+
+drops[i]++;
+
+}
+
+}
+
+setInterval(drawMatrix,33);
+
+/* GAMES */
+
+function startGame(id){
+
+let area=document.getElementById("gameArea");
+
+if(id===1){
+area.innerHTML="<p>Click the moving square!</p><canvas id='g1' width='400' height='400'></canvas><p>Score:<span id='s'>0</span></p>";
+
+let canvas=document.getElementById("g1");
+let ctx=canvas.getContext("2d");
+
+let x=100;
+let y=100;
+let score=0;
+
+function draw(){
+ctx.clearRect(0,0,400,400);
+ctx.fillStyle="red";
+ctx.fillRect(x,y,40,40);
+}
+
+canvas.onclick=function(e){
+
+let rect=canvas.getBoundingClientRect();
+let mx=e.clientX-rect.left;
+let my=e.clientY-rect.top;
+
+if(mx>x && mx<x+40 && my>y && my<y+40){
+score++;
+document.getElementById("s").innerText=score;
+x=Math.random()*360;
+y=Math.random()*360;
+draw();
+}
+
+};
+
+draw();
+}
+
+if(id===2){
+let n=Math.floor(Math.random()*10)+1;
+let g=prompt("Guess number 1-10");
+
+if(g==n) alert("Correct!");
+else alert("Wrong number:"+n);
+}
+
+if(id===3){
+
+let start=Date.now();
+alert("Click OK then click screen fast!");
+
+document.onclick=function(){
+let time=(Date.now()-start)/1000;
+alert("Your time:"+time+"s");
+document.onclick=null;
+}
+
+}
+
+if(id===4){
+alert("Dice:"+ (Math.floor(Math.random()*6)+1));
+}
+
+if(id===5){
+alert(Math.random()>0.5?"Heads":"Tails");
+}
+
+}
+
+/* SIMPLE CHATBOT */
+
+function chat(){
+
+let input=document.getElementById("userInput").value;
+let messages=document.getElementById("messages");
+
+messages.innerHTML+="<div>You: "+input+"</div>";
+
+let reply="Hello from MEFEY AI 🤖";
+
+if(input.includes("hello")) reply="Hello!";
+if(input.includes("ai")) reply="AI systems are fascinating.";
+if(input.includes("game")) reply="Try the games section.";
+
+messages.innerHTML+="<div>AI: "+reply+"</div>";
+
+document.getElementById("userInput").value="";
+
+}
+
+/* REAL CHATGPT API PLACE */
+
+async function askAI(question){
+
+const res = await fetch("https://api.openai.com/v1/chat/completions",{
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+"Authorization":"Bearer YOUR_API_KEY"
+},
+body:JSON.stringify({
+model:"gpt-4o-mini",
+messages:[{role:"user",content:question}]
+})
+});
+
+const data = await res.json();
+return data.choices[0].message.content;
+
+}
+
+</script>
 
 </body>
 </html>
