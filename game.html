@@ -1,7 +1,506 @@
-<h2>Games</h2>
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Roblox Tarzı Web Oyunu - Temel</title>
+  <style>
+    body { margin:0; overflow:hidden; }
 
-<iframe src="https://playsnake.org" width="400" height="400"></iframe>
+    #overlay {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: Arial, sans-serif;
+      color: white;
+      z-index: 100;
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
 
-<iframe src="https://chromedino.com" width="400" height="400"></iframe>
+    .panel {
+      background: rgba(0,0,0,0.65);
+      padding: 45px 55px;
+      border-radius: 20px;
+      box-shadow: 0 0 60px rgba(0,0,0,0.8);
+      text-align: center;
+      min-width: 360px;
+      animation: fadeIn 0.9s ease;
+      backdrop-filter: blur(6px);
+    }
 
-<iframe src="https://tetris.com/play-tetris" width="400" height="400"></iframe>
+    h1 { margin-bottom: 25px; font-size: 30px; letter-spacing: 1px; }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      margin: 12px 0;
+      border-radius: 10px;
+      border: none;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 16px;
+      margin-top: 18px;
+      border: none;
+      border-radius: 14px;
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      background: linear-gradient(90deg, #ff512f, #dd2476);
+      color: white;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    }
+
+    button:hover {
+      transform: translateY(-3px) scale(1.04);
+      box-shadow: 0 0 25px rgba(255,255,255,0.5);
+      filter: brightness(1.1);
+    }
+
+    .game-button { font-size: 24px; padding: 20px; margin: 18px 0; border-radius: 18px; }
+    .disabled { background: linear-gradient(90deg, #666, #333); cursor: not-allowed; opacity: 0.75; box-shadow: none; }
+    .soon { display:block; margin-top:6px; font-size:14px; opacity:0.85; color:#ffd700; }
+
+    .fade-out { opacity: 0; transform: scale(0.9); }
+    .slide-in { animation: slideIn 0.7s ease forwards; }
+
+    #hud {
+      position: fixed;
+      top: 10px; left: 10px;
+      color: white; font-family: monospace;
+      background: rgba(0,0,0,0.5);
+      padding: 8px 12px; border-radius: 8px;
+      display: none; z-index: 10;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+
+<!-- INTRO VIDEO OVERLAY -->
+<div id="introOverlay" style="position:fixed; inset:0; background:black; z-index:200; display:flex; align-items:center; justify-content:center;">
+  <video id="introVideo" src="cat_games_fade_40fps.mp4" autoplay muted playsinline style="width:100%; height:100%; object-fit:cover;"></video>
+  <button id="skipIntroBtn" style="position:absolute; right:20px; bottom:20px; padding:10px 16px; border-radius:10px; border:none; background:rgba(0,0,0,0.6); color:white; font-size:16px; cursor:pointer;">Atla ⏭️</button>
+</div>
+
+<div id="overlay">
+  <!-- LOGIN PANEL -->
+  <div id="loginPanel" class="panel" style="display:grid; grid-template-columns: 1fr 220px 260px; gap:20px; align-items:start;">
+
+    <!-- SOL: GİRİŞ + KARAKTER -->
+    <div>
+      <h1>🔐 Giriş Yap</h1>
+      <input id="username" placeholder="Kullanıcı Adı" />
+      <input id="password" type="password" placeholder="Şifre" />
+
+      <h2 style="margin-top:16px; font-size:18px;">🧑 Karakterini Oluştur</h2>
+
+      <label>Saç Stili</label>
+      <select id="hairSelect" style="width:100%; padding:10px; border-radius:8px; margin:6px 0;">
+        <option value="short">Kısa</option>
+        <option value="spiky">Dikenli</option>
+        <option value="long">Uzun</option>
+      </select>
+
+      <label>Kıyafet</label>
+      <select id="outfitSelect" style="width:100%; padding:10px; border-radius:8px; margin:6px 0;">
+        <option value="red">Kırmızı Ceket</option>
+        <option value="blue">Mavi Hoodie</option>
+        <option value="green">Yeşil Tişört</option>
+      </select>
+
+      <label>Ten Rengi</label>
+      <input id="skinColor" type="color" value="#f1c27d" style="width:100%; height:38px; border:none; border-radius:8px; margin:6px 0;" />
+
+      <div style="margin-top:10px; text-align:left;">
+        <label>🎮 Kontrol Türü</label>
+        <select id="controlMode" style="width:100%; padding:10px; border-radius:8px; margin:6px 0;">
+          <option value="auto">Otomatik Algıla</option>
+          <option value="desktop">Masaüstü (Klavye + Fare)</option>
+          <option value="mobile">Mobil (Dokunmatik)</option>
+        </select>
+      </div>
+
+      <button id="loginBtn">Devam Et ➡️</button>
+    </div>
+
+    <!-- ORTA: KARAKTER ÖN İZLEME -->
+    <div style="width:200px; text-align:center;">
+      <div id="charPreview" style="width:160px; height:220px; margin:0 auto; border-radius:12px; background:#f1c27d; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding-top:10px; box-shadow:0 0 20px rgba(0,0,0,0.5);">
+        <div id="hairPreview" style="width:80px; height:40px; background:#333; border-radius:20px 20px 10px 10px; margin-bottom:6px;"></div>
+        <div id="bodyPreview" style="width:90px; height:120px; background:red; border-radius:10px;"></div>
+      </div>
+      <div style="margin-top:8px; font-size:14px; opacity:0.8;">Ön İzleme</div>
+      <button id="previewBtn" style="margin-top:10px; padding:8px 12px; border-radius:8px; border:none; cursor:pointer;">🔄 Ön İzle</button>
+    </div>
+
+    <!-- SAĞ: DUYURULAR -->
+    <div style="width:260px; font-size:14px; opacity:0.9;">
+      <h2 style="font-size:18px; margin-bottom:10px;">📢 Duyurular</h2>
+      <div style="max-height:260px; overflow-y:auto; text-align:left; line-height:1.5;">
+        <p>• Araba oyunu fiziği güncellendi</p>
+        <p>• Menü tasarımı lüks hale getirildi</p>
+        <p>• Kamera sistemi iyileştirildi</p>
+        <p>• Renk oyunu yakında açılacak</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MENU PANEL -->
+  <div id="menuPanel" class="panel" style="display:none;">
+    <h1>✨🎮 Oyun Merkezi</h1>
+    <button class="game-button slide-in" id="carGameBtn">🚗 Araba Yarışı</button>
+    <button class="game-button slide-in" id="adminBtn">🔒 Admin Paneli</button>
+    <button class="game-button disabled slide-in" disabled>
+      🎨 Renk Basamağı
+      <span class="soon">(Yakında ⏳)</span>
+    </button>
+    <div style="margin-top:30px; font-size:14px; opacity:0.85;">Yapımcı: <b>Muhammed Efe Yeşilyurt</b></div>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="adminPanel" class="panel" style="display:none; position:fixed; inset:0; margin:auto; max-width:420px; z-index:300;">
+  <h1>🔧 Admin Paneli</h1>
+
+  <div id="adminLogin">
+    <input id="adminPassword" type="password" placeholder="Admin Şifresi" />
+    <button id="adminLoginBtn">Giriş Yap</button>
+  </div>
+
+  <div id="adminControls" style="display:none;">
+    <label>Hilelere İzin</label>
+    <select id="cheatToggle" style="width:100%; padding:10px; border-radius:8px; margin:6px 0;">
+      <option value="off">Kapalı</option>
+      <option value="on">Açık</option>
+    </select>
+
+    <label>Araba Max Hız (km/h)</label>
+    <input id="maxSpeedInput" type="number" value="150" style="width:100%; padding:10px; border-radius:8px; margin:6px 0;" />
+
+    <button id="adminSaveBtn">Kaydet ve Menüye Dön</button>
+  </div>
+</div>
+
+<div id="hud">
+  <div style="margin-bottom:6px;">Oyuncu: <span id="playerName">-</span></div>
+  <div>FPS: <span id="fps">0</span></div>
+  <div>Hız: <span id="speedText">0</span> km/h</div>
+  <div>Nitro: <span id="nitroText">100</span>%</div>
+  <button id="menuBtn" style="margin-top:10px; padding:8px 12px; border-radius:8px; border:none; cursor:pointer;">Menüye Dön</button>
+</div>
+
+<script type="module">
+// ======== MENÜ GEÇİŞ FONKSİYONLARI ========
+function goToMenu() {
+  const login = document.getElementById('loginPanel');
+  const menu = document.getElementById('menuPanel');
+  if (!login || !menu) return;
+
+  login.classList.add('fade-out');
+  setTimeout(() => {
+    login.style.display = 'none';
+    menu.style.display = 'block';
+    menu.classList.add('slide-in');
+  }, 650);
+}
+
+function startCarGame() {
+  const nameInput = document.getElementById('username');
+  const safeName = (nameInput && typeof nameInput.value === 'string' && nameInput.value.trim() !== '')
+    ? nameInput.value
+    : 'Oyuncu';
+
+  const nameEl = document.getElementById('playerName');
+  if (nameEl) nameEl.innerText = safeName;
+
+  const overlay = document.getElementById('overlay');
+  if (!overlay) return;
+
+  overlay.classList.add('fade-out');
+
+  setTimeout(() => {
+    overlay.style.display = 'none';
+    const hud = document.getElementById('hud');
+    if (hud) hud.style.display = 'block';
+    init();
+    animate();
+  }, 750);
+}
+
+// ======== INTRO OTOMATİK GEÇİŞ ========
+const introVideo = document.getElementById('introVideo');
+const introOverlay = document.getElementById('introOverlay');
+const skipBtn = document.getElementById('skipIntroBtn');
+
+function closeIntro() {
+  if (!introOverlay) return;
+  introOverlay.style.pointerEvents = 'none';
+  introOverlay.style.transition = 'opacity 0.6s ease';
+  introOverlay.style.opacity = '0';
+  setTimeout(() => {
+    introOverlay.remove();
+  }, 600);
+}
+
+if (introVideo) {
+  introVideo.addEventListener('ended', closeIntro);
+  setTimeout(() => { closeIntro(); }, 4000);
+}
+
+if (skipBtn) {
+  skipBtn.addEventListener('click', closeIntro);
+}
+
+// ======== LOGIN: KARAKTER ÖN İZLEME ========
+const hairSelect = document.getElementById('hairSelect');
+const outfitSelect = document.getElementById('outfitSelect');
+const skinColorInput = document.getElementById('skinColor');
+const charPreview = document.getElementById('charPreview');
+const hairPreview = document.getElementById('hairPreview');
+const bodyPreview = document.getElementById('bodyPreview');
+
+function updateCharacterPreview() {
+  if (!charPreview || !hairSelect || !outfitSelect || !skinColorInput) return;
+
+  charPreview.style.background = skinColorInput.value;
+
+  const hair = hairSelect.value;
+  if (hair === 'short') hairPreview.style.height = '28px';
+  if (hair === 'spiky') hairPreview.style.height = '42px';
+  if (hair === 'long') hairPreview.style.height = '55px';
+
+  const outfit = outfitSelect.value;
+  if (outfit === 'red') bodyPreview.style.background = 'red';
+  if (outfit === 'blue') bodyPreview.style.background = 'dodgerblue';
+  if (outfit === 'green') bodyPreview.style.background = 'green';
+}
+
+if (hairSelect && outfitSelect && skinColorInput) {
+  // İlk yüklemede de ön izlemeyi güncelle
+  updateCharacterPreview();
+  hairSelect.addEventListener('change', updateCharacterPreview);
+  outfitSelect.addEventListener('change', updateCharacterPreview);
+  skinColorInput.addEventListener('input', updateCharacterPreview);
+}
+
+// Ön izleme butonu
+const previewBtn = document.getElementById('previewBtn');
+if (previewBtn) previewBtn.addEventListener('click', updateCharacterPreview);
+
+// Buton bağlamaları
+const controlModeSelect = document.getElementById('controlMode');
+let selectedControlMode = 'auto';
+
+const loginBtn = document.getElementById('loginBtn');
+if (loginBtn) loginBtn.addEventListener('click', () => {
+  if (controlModeSelect && controlModeSelect.value) {
+    selectedControlMode = controlModeSelect.value;
+  }
+  console.assert(typeof selectedControlMode === 'string', 'Kontrol modu tanımlanamadı');
+  goToMenu();
+});
+
+const carBtn = document.getElementById('carGameBtn');
+if (carBtn) carBtn.addEventListener('click', startCarGame);
+
+const adminBtn = document.getElementById('adminBtn');
+const adminPanel = document.getElementById('adminPanel');
+const adminLoginBtn = document.getElementById('adminLoginBtn');
+const adminPassInput = document.getElementById('adminPassword');
+const adminControls = document.getElementById('adminControls');
+const cheatToggle = document.getElementById('cheatToggle');
+const maxSpeedInput = document.getElementById('maxSpeedInput');
+const adminSaveBtn = document.getElementById('adminSaveBtn');
+
+if (adminBtn) adminBtn.addEventListener('click', () => {
+  if (adminPanel) adminPanel.style.display = 'block';
+});
+
+if (adminLoginBtn) adminLoginBtn.addEventListener('click', () => {
+  if (adminPassInput && adminPassInput.value === '61tr') {
+    const loginBox = document.getElementById('adminLogin');
+    if (loginBox) loginBox.style.display = 'none';
+    if (adminControls) adminControls.style.display = 'block';
+  } else {
+    alert('Yetkisiz erişim!');
+  }
+});
+
+if (adminSaveBtn) adminSaveBtn.addEventListener('click', () => {
+  cheatsEnabled = cheatToggle && cheatToggle.value === 'on';
+  const kmh = parseFloat(maxSpeedInput.value || '150');
+  maxSpeed = Math.max(1, kmh / 3);
+  if (adminPanel) adminPanel.style.display = 'none';
+});
+
+// ======== THREE.JS OYUN KISMI ========
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js";
+
+let scene, camera, renderer;
+let car;
+let lastTime = performance.now();
+let fpsEl = document.getElementById('fps');
+
+const keys = {};
+
+// HATA DÜZELTME: e.key undefined olursa toLowerCase çağırma
+window.addEventListener('keydown', e => {
+  if (e.key === 'Shift') {
+    nitroBoost = 1.5;
+  }
+  if (typeof e.key === 'string') {
+    keys[e.key.toLowerCase()] = true;
+  }
+});
+
+window.addEventListener('keyup', e => {
+  if (e.key === 'Shift') {
+    nitroBoost = 1;
+  }
+  if (typeof e.key === 'string') {
+    keys[e.key.toLowerCase()] = false;
+  }
+});
+
+function init() {
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x87ceeb);
+
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+
+  const light = new THREE.DirectionalLight(0xffffff, 1);
+  light.position.set(10, 20, 10);
+  scene.add(light);
+
+  const ambient = new THREE.AmbientLight(0x404040);
+  scene.add(ambient);
+
+  // Yol (engel yok, her yöne serbest hareket)
+  const roadGeo = new THREE.PlaneGeometry(20, 500);
+  const roadMat = new THREE.MeshStandardMaterial({ color: 0x555555 });
+  const road = new THREE.Mesh(roadGeo, roadMat);
+  road.rotation.x = -Math.PI / 2;
+  scene.add(road);
+
+  // Çimen (sınır yok, dekor amaçlı)
+  const grassMat = new THREE.MeshStandardMaterial({ color: 0x228b22 });
+
+  const leftGrass = new THREE.Mesh(new THREE.PlaneGeometry(100, 500), grassMat);
+  leftGrass.position.x = -60;
+  leftGrass.rotation.x = -Math.PI / 2;
+  scene.add(leftGrass);
+
+  const rightGrass = new THREE.Mesh(new THREE.PlaneGeometry(100, 500), grassMat);
+  rightGrass.position.x = 60;
+  rightGrass.rotation.x = -Math.PI / 2;
+  scene.add(rightGrass);
+
+  // Araba
+  const carGeo = new THREE.BoxGeometry(2, 1, 4);
+  const carMat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+  car = new THREE.Mesh(carGeo, carMat);
+  car.position.set(0, 0.5, 0);
+  scene.add(car);
+
+  camera.position.set(0, 5, 10);
+
+  window.addEventListener('resize', onResize);
+
+  // Menü butonu
+  const menuBtn = document.getElementById('menuBtn');
+  if (menuBtn) {
+    menuBtn.addEventListener('click', () => location.reload());
+  }
+
+  // ======== TESTLER ========
+  console.assert(typeof update === 'function', 'update fonksiyonu yok');
+  console.assert(typeof animate === 'function', 'animate fonksiyonu yok');
+  console.assert(typeof goToMenu === 'function', 'goToMenu tanımsız');
+  console.assert(typeof startCarGame === 'function', 'startCarGame tanımsız');
+}
+
+let speed = 0;
+let cheatsEnabled = false; // admin panelinden gelen hile izni bayrağı
+let rotationSpeed = 0;
+const maxSpeedKm = 150; // maksimum hız km/h
+let maxSpeed = maxSpeedKm / 3; // fizik birimine dönüştür
+let nitro = 100; // %
+// Nitro sadece Shift basılıyken azalır
+let nitroBoost = 1;
+
+function update(dt) {
+  if (nitroBoost > 1 && nitro > 0) {
+    nitro = Math.max(0, nitro - 30 * dt);
+  }
+  if (nitro <= 0) nitroBoost = 1;
+  const acc = 20 * dt;
+  const turn = 2 * dt;
+
+  if (keys['w']) speed += acc;
+  if (keys['s']) speed -= acc;
+  if (keys['a']) rotationSpeed += turn;
+  if (keys['d']) rotationSpeed -= turn;
+
+  speed = Math.max(Math.min(speed, maxSpeed * nitroBoost), -maxSpeed);
+
+  speed *= 0.98;
+  rotationSpeed *= 0.9;
+
+  car.rotation.y += rotationSpeed;
+
+  const forward = new THREE.Vector3(0, 0, -1);
+  forward.applyQuaternion(car.quaternion);
+  car.position.addScaledVector(forward, speed * dt);
+
+  const camOffset = new THREE.Vector3(0, 5, 10);
+  camOffset.applyQuaternion(car.quaternion);
+  camera.position.copy(car.position).add(camOffset);
+  camera.lookAt(car.position);
+}
+
+function animate(now = performance.now()) {
+  const dt = (now - lastTime) / 1000;
+  lastTime = now;
+
+  const fps = Math.round(1 / Math.max(dt, 0.0001));
+  if (fpsEl) fpsEl.innerText = fps;
+
+  const speedKm = Math.max(0, Math.round(speed * 3)); // km/h göstergesi
+  const speedText = document.getElementById('speedText');
+  if (speedText) speedText.innerText = speedKm;
+
+  const nitroText = document.getElementById('nitroText');
+  if (nitroText) nitroText.innerText = Math.round(nitro);
+
+  update(dt);
+  renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+}
+
+function onResize() {
+  if (!camera || !renderer) return;
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+// ======== EK TESTLER (BASİT) ========
+console.assert(document.getElementById('loginBtn'), 'loginBtn bulunamadı');
+console.assert(document.getElementById('carGameBtn'), 'carGameBtn bulunamadı');
+console.assert(document.getElementById('hairSelect'), 'hairSelect bulunamadı');
+console.assert(document.getElementById('outfitSelect'), 'outfitSelect bulunamadı');
+</script>
+</body>
+</html>
